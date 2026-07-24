@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRef, useState } from 'react';
 import {
   Animated,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -273,20 +274,23 @@ const styles = StyleSheet.create({
   },
   bloom: {
     position: 'absolute',
-    width: 380,
-    height: 380,
-    borderRadius: 190,
-    opacity: 0.9,
+    width: 460,
+    height: 460,
+    borderRadius: 230,
+    ...Platform.select({
+      web: { filter: 'blur(90px)' },
+      default: { filter: [{ blur: 90 }] },
+    }),
   },
   bloomRed: {
-    top: 220,
-    left: -180,
-    backgroundColor: 'rgba(240,51,27,0.12)',
+    top: 200,
+    left: -190,
+    backgroundColor: 'rgba(240,51,27,0.45)',
   },
   bloomBlue: {
-    top: 120,
-    right: -190,
-    backgroundColor: 'rgba(47,111,224,0.12)',
+    top: 90,
+    right: -200,
+    backgroundColor: 'rgba(47,111,224,0.42)',
   },
   safeArea: {
     flex: 1,
