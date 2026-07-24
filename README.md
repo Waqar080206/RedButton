@@ -1,8 +1,64 @@
-# Welcome to your Expo app 👋
+# 🔴 Red Button
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**AI-powered emergency assistant for industrial safety.**
 
-## Get started
+> Built for **Hack for Good** @ [hack-vsit.tech](https://hack-vsit.tech)
+> by **Team Canon Event** — Waqar Akhtar & Akshat Talwar.
+
+---
+
+## The Problem
+
+When something goes wrong on a factory floor, workers face a dangerous gap: critical safety
+information is buried in 200-page manuals, and there's no time to search during an emergency.
+**Seconds matter.**
+
+## The Solution
+
+A multimodal, RAG-based emergency chatbot that admins populate with equipment manuals and
+SOPs. Workers hit a **Red Button** during an emergency and get instant, cited, machine-specific
+guidance via **voice, text, or photo** — grounded strictly in real documentation, never guessed.
+
+But it doesn't stop at conversation. It's an **agent with real-world tools**, connected via a
+custom **MCP server**, so it can *act* — not just advise.
+
+## Core Tech
+
+- **Machine-scoped RAG** — QR/NFC-tagged equipment → scoped retrieval.
+- **Multimodal input** — voice, text, photo/video.
+- **Citation-grounded answers** — no hallucinated safety instructions.
+- **Confidence-gated responses** — escalates to a human instead of guessing.
+
+## Agentic Tools (MCP Server)
+
+**Live escalation** — `escalate_to_human`, `trigger_emergency_protocol`,
+`call_emergency_services`, `notify_nearest_workers`, `request_backup`.
+**Post-incident** — `schedule_debrief`, `generate_incident_report`.
+
+Tools are split into **advisory** (agent can call autonomously) and **actuation-adjacent**
+(escalation, protocols, dispatch — high-stakes, human-verifiable, always logged). This keeps
+the system fast in a crisis while staying safe and auditable.
+
+---
+
+## Tech Stack
+
+- **App:** [Expo](https://expo.dev) SDK 57 (React Native 0.86, React 19.2), TypeScript, `expo-router`.
+- **AI:** Anthropic Claude (RAG generation + agentic tool use).
+- **Tools:** Custom MCP server (backend location TBD).
+
+## Documentation
+
+| Doc | Purpose |
+|---|---|
+| [docs/Design_brief.md](docs/Design_brief.md) | UX vision, personas, screens, visual language |
+| [docs/PRD.md](docs/PRD.md) | Functional & non-functional requirements |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, MCP tool contracts, app structure, RAG pipeline |
+| [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md) | Prior-session decisions & deliberately-removed scope |
+
+---
+
+## Get Started
 
 1. Install dependencies
 
@@ -16,41 +72,20 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+Open in a [development build](https://docs.expo.dev/develop/development-builds/introduction/),
+[Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/),
+[iOS simulator](https://docs.expo.dev/workflow/ios-simulator/), or [Expo Go](https://expo.dev/go).
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+> ⚠️ Several native features (camera, audio, location, NFC, notifications) require a
+> **Dev Client build** (`npx expo run:android`) and won't work in Expo Go.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+App source lives in the `src/app` directory using [file-based routing](https://docs.expo.dev/router/introduction).
 
-## Get a fresh project
+> **Note:** Always consult the versioned docs at
+> [docs.expo.dev/versions/v57.0.0](https://docs.expo.dev/versions/v57.0.0/) before writing Expo code.
 
-When you're ready, run:
+---
 
-```bash
-npm run reset-project
-```
+## Team
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+**Canon Event** — Waqar Akhtar · Akshat Talwar
