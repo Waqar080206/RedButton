@@ -1,319 +1,328 @@
-import { LogoMark } from "@/components/landing/logo-mark";
-import { MaxContentWidth } from "@/constants/theme";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { LogoMark } from '@/components/landing/logo-mark';
+import { MaxContentWidth } from '@/constants/theme';
+import { deleteDocument, DocumentRecord, listDocuments, uploadDocument } from '@/services/documents';
 
 const NAV_HEIGHT = 78;
 
-type NavKey = "overview" | "users" | "analytics" | "settings";
+type NavKey = 'home' | 'notifications' | 'profile' | 'settings';
 
 type NavItem = {
   key: NavKey;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   route: string;
+  badge?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
   {
-    key: "overview",
-    label: "Overview",
-    icon: "grid-outline",
-    route: "/admin-dashboard",
+    key: 'home',
+    label: 'Home',
+    icon: 'home',
+    route: '/admin-dashboard',
   },
   {
-    key: "users",
-    label: "Users",
-    icon: "people-outline",
-    route: "/users",
+    key: 'notifications',
+    label: 'Notifications',
+    icon: 'notifications-outline',
+    route: '/notifications',
+    badge: true,
   },
   {
-    key: "analytics",
-    label: "Analytics",
-    icon: "bar-chart-outline",
-    route: "/analytics",
+    key: 'profile',
+    label: 'Profile',
+    icon: 'person-outline',
+    route: '/profile',
   },
   {
-    key: "settings",
-    label: "Settings",
-    icon: "settings-outline",
-    route: "/settings",
+    key: 'settings',
+    label: 'Settings',
+    icon: 'settings-outline',
+    route: '/settings',
   },
 ];
 
-const STATS = [
+const FORMATS = [
   {
-    title: "Workers",
-    value: "248",
-    icon: "people",
-    color: "#2F6FE0",
+    key: 'pdf',
+    label: 'PDF',
+    icon: 'file-pdf-box',
+    color: '#E11900',
   },
   {
-    title: "Supervisors",
-    value: "18",
-    icon: "shield-checkmark",
-    color: "#7A4DF5",
+    key: 'docx',
+    label: 'DOCX',
+    icon: 'file-word-box',
+    color: '#2F6FE0',
   },
   {
-    title: "Incidents",
-    value: "04",
-    icon: "warning",
-    color: "#E11900",
+    key: 'txt',
+    label: 'TXT',
+    icon: 'card-text-outline',
+    color: '#22A55E',
   },
-  {
-    title: "System Uptime",
-    value: "99.98%",
-    icon: "pulse",
-    color: "#22A55E",
-  },
+] as const;
+
+const ACCEPTED_MIME_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
 ];
 
-const SYSTEM_HEALTH = [
-  {
-    title: "AI Assistant",
-    status: "Healthy",
-  },
-  {
-    title: "Notification Service",
-    status: "Operational",
-  },
-  {
-    title: "Factory Database",
-    status: "Connected",
-  },
-  {
-    title: "Camera Network",
-    status: "Online",
-  },
-  {
-    title: "Edge Devices",
-    status: "Synced",
-  },
-];
-
-const ACTIONS = [
-  {
-    title: "User Management",
-    icon: "people-outline",
-  },
-  {
-    title: "Factory Settings",
-    icon: "settings-outline",
-  },
-  {
-    title: "Reports",
-    icon: "document-text-outline",
-  },
-  {
-    title: "AI Control",
-    icon: "hardware-chip-outline",
-  },
-];
+function iconForFilename(filename: string) {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  if (ext === 'pdf') return { icon: 'file-pdf-box' as const, color: '#E11900' };
+  if (ext === 'docx' || ext === 'doc') return { icon: 'file-word-box' as const, color: '#2F6FE0' };
+  return { icon: 'card-text-outline' as const, color: '#22A55E' };
+}
 
 export default function AdminDashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [activeTab, setActiveTab] = useState<NavKey>('home');
+
+  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const refreshDocuments = useCallback(async () => {
+    setLoadingDocuments(true);
+    try {
+      const docs = await listDocuments();
+      setDocuments(docs);
+      setLoadError(null);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Failed to load documents');
+    } finally {
+      setLoadingDocuments(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshDocuments();
+  }, [refreshDocuments]);
+
+  const handleUpload = useCallback(async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ACCEPTED_MIME_TYPES,
+      copyToCacheDirectory: true,
+    });
+
+    if (result.canceled || !result.assets?.length) return;
+
+    setUploading(true);
+    try {
+      await uploadDocument(result.assets[0], { uploadedBy: 'SK', role: 'admin' });
+      await refreshDocuments();
+    } catch (err) {
+      Alert.alert('Upload failed', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  }, [refreshDocuments]);
+
+  const handleDelete = useCallback(
+    (doc: DocumentRecord) => {
+      Alert.alert('Remove document', `Delete "${doc.filename}"? This cannot be undone.`, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteDocument(doc.id);
+              await refreshDocuments();
+            } catch (err) {
+              Alert.alert('Delete failed', err instanceof Error ? err.message : 'Please try again.');
+            }
+          },
+        },
+      ]);
+    },
+    [refreshDocuments],
+  );
 
   return (
     <View style={styles.page}>
-      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.content,
-            {
-              paddingBottom: NAV_HEIGHT + insets.bottom + 30,
-            },
-          ]}
-        >
-          {/* Header */}
-
+            { paddingBottom: NAV_HEIGHT + insets.bottom + 30 },
+          ]}>
+          {/* Top bar */}
           <View style={styles.topBar}>
             <View style={styles.brandRow}>
               <LogoMark size={36} />
-
-              <Text style={styles.brand}>
-                Red <Text style={styles.brandBold}>Button</Text>
+              <Text style={styles.brandText}>
+                Red <Text style={styles.brandTextBold}>Button</Text>
               </Text>
             </View>
 
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>AD</Text>
-            </View>
-          </View>
+            <View style={styles.topBarActions}>
+              <Pressable style={styles.searchButton}>
+                <Ionicons name="search" size={20} color="#0F1729" />
+              </Pressable>
 
-          {/* Hero */}
-
-          <View style={styles.header}>
-            <Text style={styles.eyebrow}>Administration</Text>
-
-            <Text style={styles.title}>
-              Factory Command{"\n"}Center
-            </Text>
-
-            <Text style={styles.subtitle}>
-              Monitor system health, manage users, configure AI services and
-              oversee factory-wide safety operations.
-            </Text>
-          </View>
-
-          {/* AI Status */}
-
-          <View style={styles.statusCard}>
-            <View style={styles.statusIcon}>
-              <MaterialCommunityIcons
-                name="robot-happy-outline"
-                size={28}
-                color="#7A4DF5"
-              />
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.statusTitle}>AI Emergency Assistant</Text>
-
-              <Text style={styles.statusSubtitle}>
-                All services are healthy and responding normally.
-              </Text>
-            </View>
-
-            <View style={styles.liveBadge}>
-              <Text style={styles.liveText}>ONLINE</Text>
-            </View>
-          </View>
-
-          {/* Stats */}
-
-          <View style={styles.statsGrid}>
-            {STATS.map((item) => (
-              <View key={item.title} style={styles.statCard}>
-                <View
-                  style={[
-                    styles.statIcon,
-                    {
-                      backgroundColor: `${item.color}15`,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={item.icon as any}
-                    size={22}
-                    color={item.color}
-                  />
-                </View>
-
-                <Text style={styles.statValue}>{item.value}</Text>
-
-                <Text style={styles.statLabel}>{item.title}</Text>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>SK</Text>
               </View>
-            ))}
+            </View>
           </View>
 
-          {/* System Health */}
+          {/* Upload card */}
+          <View style={styles.uploadCard}>
+            <View style={styles.uploadIconWrap}>
+              <View style={styles.uploadIconGlow} pointerEvents="none" />
+              <View style={styles.uploadIconCircle}>
+                <Ionicons name="cloud-upload-outline" size={40} color="#E11900" />
+              </View>
+            </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>System Health</Text>
+            <Text style={styles.uploadTitle}>Upload Documents</Text>
+            <Text style={styles.uploadSubtitle}>
+              Upload manuals, instructions and{'\n'}reference files.
+            </Text>
 
-            <View style={styles.card}>
-              {SYSTEM_HEALTH.map((item) => (
-                <View key={item.title} style={styles.healthRow}>
-                  <View style={styles.healthLeft}>
-                    <View style={styles.greenDot} />
-
-                    <Text style={styles.healthTitle}>{item.title}</Text>
+            <Pressable
+              style={[styles.dropzone, uploading && styles.dropzoneDisabled]}
+              onPress={handleUpload}
+              disabled={uploading}>
+              {uploading ? (
+                <>
+                  <ActivityIndicator color="#E11900" size="small" style={{ marginBottom: 16 }} />
+                  <Text style={styles.dropzoneText}>Uploading…</Text>
+                </>
+              ) : (
+                <>
+                  <View style={styles.dropzoneIcon}>
+                    <Ionicons name="document-text-outline" size={26} color="#E11900" />
                   </View>
+                  <Text style={styles.dropzoneText}>
+                    Tap to <Text style={styles.dropzoneTextRed}>upload</Text> or drag and drop
+                  </Text>
+                  <Text style={styles.dropzoneHint}>PDF, DOCX, TXT  •  Max 50 MB</Text>
+                </>
+              )}
+            </Pressable>
 
-                  <View style={styles.healthRight}>
-                    <Text style={styles.healthStatus}>{item.status}</Text>
+            <Text style={styles.supportedLabel}>Supported Formats</Text>
 
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={18}
-                      color="#22A55E"
-                    />
-                  </View>
+            <View style={styles.formatsRow}>
+              {FORMATS.map((format) => (
+                <View key={format.key} style={styles.formatChip}>
+                  <MaterialCommunityIcons
+                    name={format.icon as any}
+                    size={20}
+                    color={format.color}
+                  />
+                  <Text style={styles.formatLabel}>{format.label}</Text>
                 </View>
               ))}
             </View>
           </View>
 
-          {/* Quick Actions */}
+          {/* Uploaded documents */}
+          <View style={styles.docsSection}>
+            <Text style={styles.docsTitle}>Uploaded Documents</Text>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Administration</Text>
-
-            <View style={styles.actionsGrid}>
-              {ACTIONS.map((item) => (
-                <Pressable key={item.title} style={styles.actionCard}>
-                  <View style={styles.actionIcon}>
-                    <Ionicons
-                      name={item.icon as any}
-                      size={22}
-                      color="#7A4DF5"
-                    />
-                  </View>
-
-                  <Text style={styles.actionTitle}>
-                    {item.title}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            {loadingDocuments ? (
+              <View style={styles.docsEmpty}>
+                <ActivityIndicator color="#E11900" size="small" />
+              </View>
+            ) : loadError ? (
+              <View style={styles.docsEmpty}>
+                <Text style={styles.docsEmptyText}>{loadError}</Text>
+              </View>
+            ) : documents.length === 0 ? (
+              <View style={styles.docsEmpty}>
+                <Text style={styles.docsEmptyText}>No documents uploaded yet.</Text>
+              </View>
+            ) : (
+              <View style={styles.docsList}>
+                {documents.map((doc) => {
+                  const meta = iconForFilename(doc.filename);
+                  return (
+                    <View key={doc.id} style={styles.docRow}>
+                      <View style={[styles.docIcon, { backgroundColor: `${meta.color}15` }]}>
+                        <MaterialCommunityIcons name={meta.icon} size={22} color={meta.color} />
+                      </View>
+                      <View style={styles.docInfo}>
+                        <Text style={styles.docName} numberOfLines={1}>
+                          {doc.filename}
+                        </Text>
+                        <Text style={styles.docMeta}>
+                          {doc.chunk_count} chunks • {doc.status}
+                        </Text>
+                      </View>
+                      <Pressable
+                        onPress={() => handleDelete(doc)}
+                        hitSlop={10}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Delete ${doc.filename}`}>
+                        <Ionicons name="trash-outline" size={20} color="#B7BDC9" />
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>
 
-      {/* Bottom Navigation */}
-
-      <View
-        style={[
-          styles.navBarWrap,
-          {
-            bottom: insets.bottom + 16,
-          },
-        ]}
-      >
+      {/* Bottom nav */}
+      <View style={[styles.navBarWrap, { bottom: insets.bottom + 16 }]} pointerEvents="box-none">
         <View style={styles.navBar}>
-          {NAV_ITEMS.map((item) => (
-            <Pressable
-              key={item.key}
-              style={[
-                styles.navItem,
-                item.key === "overview" && styles.navItemSelected,
-              ]}
-              onPress={() => router.navigate(item.route)}
-            >
-              <Ionicons
-                name={item.icon}
-                size={22}
-                color={
-                  item.key === "overview"
-                    ? "#7A4DF5"
-                    : "#6B7280"
-                }
-              />
-
-              <Text
-                style={[
-                  styles.navLabel,
-                  item.key === "overview" &&
-                    styles.navLabelSelected,
-                ]}
-              >
-                {item.label}
-              </Text>
-            </Pressable>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const selected = activeTab === item.key;
+            return (
+              <Pressable
+                key={item.key}
+                onPress={() => {
+                  setActiveTab(item.key);
+                  router.navigate(item.route);
+                }}
+                style={[styles.navItem, selected && styles.navItemSelected]}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}>
+                <View>
+                  <Ionicons name={item.icon} size={22} color={selected ? '#E11900' : '#5B6472'} />
+                  {item.badge && <View style={styles.navBadgeDot} />}
+                </View>
+                <Text style={[styles.navLabel, selected && styles.navLabelSelected]}>
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       </View>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   page: {
     flex: 1,
-    backgroundColor: "#F6F7FB",
+    backgroundColor: '#F6F7FB',
   },
 
   safeArea: {
@@ -321,363 +330,332 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 20,
   },
 
-  /* ---------- Header ---------- */
+  /* ---------- Top bar ---------- */
 
   topBar: {
-    width: "100%",
+    width: '100%',
     maxWidth: MaxContentWidth,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    paddingBottom: 20,
   },
 
   brandRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+
+  brandText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#E11900',
+  },
+
+  brandTextBold: {
+    color: '#0F1729',
+    fontWeight: '800',
+  },
+
+  topBarActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
 
-  brand: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  brandBold: {
-    color: "#7A4DF5",
+  searchButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0F1729',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
 
   avatar: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "rgba(122,77,245,0.12)",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: 'rgba(225,25,0,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   avatarText: {
-    color: "#7A4DF5",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-
-  header: {
-    width: "100%",
-    maxWidth: MaxContentWidth,
-    marginTop: 28,
-  },
-
-  eyebrow: {
-    fontSize: 13,
-    color: "#7A4DF5",
-    fontWeight: "700",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-
-  title: {
-    marginTop: 8,
-    fontSize: 34,
-    lineHeight: 42,
-    fontWeight: "800",
-    color: "#101828",
-  },
-
-  subtitle: {
-    marginTop: 12,
     fontSize: 15,
-    lineHeight: 24,
-    color: "#667085",
+    fontWeight: '800',
+    color: '#E11900',
   },
 
-  /* ---------- AI Status ---------- */
+  /* ---------- Upload card ---------- */
 
-  statusCard: {
-    width: "100%",
+  uploadCard: {
+    width: '100%',
     maxWidth: MaxContentWidth,
-    marginTop: 30,
-    padding: 22,
-    borderRadius: 24,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    alignItems: 'center',
 
-    flexDirection: "row",
-    alignItems: "center",
-
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
+    shadowColor: '#0F1729',
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
     elevation: 5,
   },
 
-  statusIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
-    backgroundColor: "rgba(122,77,245,0.12)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 18,
+  uploadIconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
 
-  statusTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#111827",
+  uploadIconGlow: {
+    position: 'absolute',
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: 'rgba(225,25,0,0.12)',
   },
 
-  statusSubtitle: {
-    marginTop: 4,
-    color: "#667085",
-    fontSize: 13,
+  uploadIconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#E11900',
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
   },
 
-  liveBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: "#DCFCE7",
+  uploadTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#0F1729',
   },
 
-  liveText: {
-    color: "#15803D",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.6,
+  uploadSubtitle: {
+    marginTop: 10,
+    fontSize: 14.5,
+    lineHeight: 21,
+    color: '#5B6472',
+    textAlign: 'center',
   },
 
-  /* ---------- Stats ---------- */
-
-  statsGrid: {
-    width: "100%",
-    maxWidth: MaxContentWidth,
+  dropzone: {
+    width: '100%',
     marginTop: 28,
-
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    rowGap: 16,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(225,25,0,0.35)',
+    borderStyle: 'dashed',
+    backgroundColor: 'rgba(225,25,0,0.03)',
+    alignItems: 'center',
+    paddingVertical: 36,
+    paddingHorizontal: 20,
   },
 
-  statCard: {
-    width: "48%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 18,
-
-    shadowColor: "#111827",
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-
-    elevation: 4,
+  dropzoneDisabled: {
+    opacity: 0.6,
   },
 
-  statIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  statValue: {
-    marginTop: 18,
-    fontSize: 30,
-    fontWeight: "800",
-    color: "#111827",
-  },
-
-  statLabel: {
-    marginTop: 6,
-    fontSize: 14,
-    color: "#667085",
-    fontWeight: "600",
-  },
-
-  /* ---------- Sections ---------- */
-
-  section: {
-    width: "100%",
-    maxWidth: MaxContentWidth,
-    marginTop: 34,
-  },
-
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#111827",
+  dropzoneIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: 'rgba(225,25,0,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
   },
 
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    overflow: "hidden",
-
-    shadowColor: "#111827",
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-
-    elevation: 4,
-  },
-
-  /* ---------- Health ---------- */
-
-  healthRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEF1F5",
-  },
-
-  healthLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-
-  greenDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#22A55E",
-  },
-
-  healthTitle: {
+  dropzoneText: {
     fontSize: 15,
-    fontWeight: "600",
-    color: "#111827",
+    fontWeight: '600',
+    color: '#0F1729',
   },
 
-  healthRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  dropzoneTextRed: {
+    color: '#E11900',
+    fontWeight: '800',
   },
 
-  healthStatus: {
-    color: "#22A55E",
-    fontWeight: "700",
+  dropzoneHint: {
+    marginTop: 8,
     fontSize: 13,
+    color: '#8A93A3',
   },
 
-  /* ---------- Quick Actions ---------- */
-
-  actionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    rowGap: 16,
+  supportedLabel: {
+    marginTop: 26,
+    fontSize: 13.5,
+    color: '#8A93A3',
   },
 
-  actionCard: {
-    width: "48%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    alignItems: "center",
-    paddingVertical: 22,
-
-    shadowColor: "#111827",
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-
-    elevation: 4,
-  },
-
-  actionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: "rgba(122,77,245,0.12)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  actionTitle: {
+  formatsRow: {
+    flexDirection: 'row',
+    gap: 10,
     marginTop: 14,
-    textAlign: "center",
-    fontWeight: "700",
-    color: "#111827",
-    fontSize: 15,
+    width: '100%',
+    justifyContent: 'space-between',
   },
 
-  /* ---------- Bottom Navigation ---------- */
+  formatChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: '#F6F7FB',
+  },
+
+  formatLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F1729',
+  },
+
+  /* ---------- Uploaded documents ---------- */
+
+  docsSection: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    marginTop: 24,
+  },
+
+  docsTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F1729',
+    marginBottom: 12,
+  },
+
+  docsEmpty: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    paddingVertical: 28,
+    alignItems: 'center',
+  },
+
+  docsEmptyText: {
+    fontSize: 13.5,
+    color: '#8A93A3',
+  },
+
+  docsList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    overflow: 'hidden',
+  },
+
+  docRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F1F5',
+  },
+
+  docIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  docInfo: {
+    flex: 1,
+    gap: 2,
+  },
+
+  docName: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#0F1729',
+  },
+
+  docMeta: {
+    fontSize: 12.5,
+    color: '#8A93A3',
+  },
+
+  /* ---------- Bottom nav ---------- */
 
   navBarWrap: {
-    position: "absolute",
-    left: 18,
-    right: 18,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
 
   navBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-
-    backgroundColor: "#FFFFFF",
-
-    borderRadius: 24,
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-
-    shadowColor: "#111827",
-    shadowOpacity: 0.12,
-    shadowRadius: 22,
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-
-    elevation: 10,
+    flexDirection: 'row',
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    backgroundColor: '#ffffff',
+    borderRadius: 22,
+    padding: 8,
+    gap: 8,
+    shadowColor: '#0F1729',
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
 
   navItem: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
-
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 16,
   },
 
   navItemSelected: {
-    backgroundColor: "rgba(122,77,245,0.10)",
+    backgroundColor: 'rgba(225,25,0,0.08)',
+  },
+
+  navBadgeDot: {
+    position: 'absolute',
+    top: -2,
+    right: -4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E11900',
   },
 
   navLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#6B7280",
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#5B6472',
   },
 
   navLabelSelected: {
-    color: "#7A4DF5",
-    fontWeight: "800",
+    color: '#E11900',
+    fontWeight: '700',
   },
 });
