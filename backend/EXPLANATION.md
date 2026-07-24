@@ -12,7 +12,7 @@ confidence gate that refuses to guess when nothing relevant was found.
 | Concern | Choice | Why |
 |---|---|---|
 | API framework | FastAPI | async routes, auto docs, typed request/response models |
-| LLM (answer generation) | Anthropic Claude (`claude-opus-4-8`) | structured JSON output for reliable answer + citations |
+| LLM (answer generation) | Anthropic Claude (`claude-opus-4-8`), swappable to Groq (`openai/gpt-oss-120b`) via `LLM_PROVIDER` env var | structured JSON output for reliable answer + citations; Groq is a free fallback for testing without API credits |
 | Embeddings | `fastembed` (via `qdrant-client[fastembed]`) | free, local, ONNX-based — no API key, no torch |
 | Vector store | Qdrant, embedded/local mode (`QdrantClient(path=...)`) | no server/docker needed for a mini/test deployment |
 | Document metadata | SQLite (`storage/app.db`) | filename, uploader, role, machine_id, chunk count |
@@ -29,7 +29,8 @@ backend/
   services/
     ingestion.py           # extract -> chunk -> embed+store -> record metadata
     retrieval.py            # Qdrant query, optional machine_id filter
-    rag.py                  # confidence gate + Claude call + citations
+    rag.py                  # confidence gate + Claude/Groq call + citations
+    memory.py                # per-session conversation history (SQLite "messages" table)
   routers/
     documents.py            # POST /documents/upload, GET /documents, DELETE /documents/{id}
     chat.py                  # POST /chat
@@ -64,32 +65,57 @@ Response: DocumentOut (id, filename, chunk_count, status, ...)
 
 ```
 Browser (static/index.html)
-   │  POST /chat  { question, machine_id? }
+   │  POST /chat  { question, machine_id?, session_id? }
+   │  session_id comes from localStorage; null on a brand-new conversation
    ▼
 routers/chat.py: chat()
    ▼
 services/rag.py: answer_question()
    │
+   ├─ session_id = session_id or uuid4()  — first turn mints a new one
+   ├─ services/memory.py: get_history(session_id)
+   │    loads prior turns (last 6 user+assistant pairs) from SQLite "messages"
+   │
    ├─ services/retrieval.py: retrieve_chunks()
-   │    Qdrant client.query() — embeds the question, does a similarity
-   │    search against "manual_chunks", optionally filtered by machine_id
-   │    (models.Filter + FieldCondition on the machine_id payload field)
+   │    Qdrant client.query() — embeds the CURRENT question only (history is
+   │    not used for retrieval), does a similarity search against
+   │    "manual_chunks", optionally filtered by machine_id
    │
    ├─ CONFIDENCE GATE
    │    if no results OR top result's score < CONFIDENCE_THRESHOLD (0.35):
    │      -> return a fixed "not found in uploaded manuals" response,
    │         found_in_manuals=false, no Claude call made
-   │      (this is what stops the system from hallucinating an answer)
+   │      (this runs BEFORE history is used — see "Memory + confidence gate"
+   │      note below)
    │
-   └─ otherwise: build a context block from the retrieved chunks
-        (filename + chunk_index + text of each), then call Claude
-        (client.messages.create with output_config.format = a JSON
-        schema for {answer, found_in_manuals, citations[]}) with a
-        system prompt that says "answer only from the provided
-        context, cite sources, say so if the answer isn't there"
+   ├─ otherwise: build a context block from the retrieved chunks, then call
+   │    Claude/Groq with `history + [current question+context]` as the
+   │    messages array, so follow-ups like "what about the second one?"
+   │    resolve correctly
+   │
+   └─ services/memory.py: save_message() — the question and the answer text
+        (not the full JSON) are appended to SQLite "messages" under session_id
    ▼
-Response: ChatResponse { answer, found_in_manuals, citations[] }
+Response: ChatResponse { answer, found_in_manuals, citations[], session_id }
 ```
+
+### Memory + confidence gate interaction (known limitation)
+
+The confidence gate scores retrieval on the **current question alone**, before
+the LLM (and its conversation history) is ever consulted. This means:
+
+- Follow-ups that still relate to manual content ("what about docx files?")
+  work correctly — they retrieve well on their own and the LLM sees prior
+  turns too.
+- Pure meta-questions about the conversation itself ("what did I just ask
+  you?", "which one did I mention first?") get blocked by the gate and never
+  reach the LLM, because they don't semantically match any manual chunk.
+
+This is a byproduct of keeping the "never hallucinate safety content" gate
+simple. If conversational meta-questions need to work, the gate would need to
+check for existing history before requiring a retrieval match — not
+implemented, since the core requirement was grounded manual Q&A, not general
+chat memory.
 
 ## Flow 3 — Deleting a document
 
@@ -129,6 +155,12 @@ routers/documents.py -> services/ingestion.py: delete_document()
   directory; the reloader's subprocess model can leave a stale `.lock` file.
   If you see a "storage folder is already accessed" error, stop all Python
   processes and delete `storage/qdrant_data/.lock`.
+- **Single worker only.** Embedded Qdrant's file lock means only one process
+  can hold `storage/qdrant_data/` at a time. Run with a single uvicorn worker
+  (the default — don't pass `--workers > 1`, and don't put this behind
+  gunicorn with multiple worker processes). If you outgrow this, run a real
+  Qdrant server (Docker or Qdrant Cloud) and switch the client from
+  `QdrantClient(path=...)` to `QdrantClient(url=...)`.
 - **First upload is slow.** `fastembed` downloads its embedding model
   (`BAAI/bge-small-en-v1.5`) from Hugging Face on first use and caches it
   locally — expect a one-time delay of roughly a minute.
