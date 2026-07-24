@@ -47,14 +47,6 @@ the system fast in a crisis while staying safe and auditable.
 - **AI:** Anthropic Claude (RAG generation + agentic tool use).
 - **Tools:** Custom MCP server (backend location TBD).
 
-## Documentation
-
-| Doc | Purpose |
-|---|---|
-| [docs/Design_brief.md](docs/Design_brief.md) | UX vision, personas, screens, visual language |
-| [docs/PRD.md](docs/PRD.md) | Functional & non-functional requirements |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, MCP tool contracts, app structure, RAG pipeline |
-| [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md) | Prior-session decisions & deliberately-removed scope |
 
 ---
 
