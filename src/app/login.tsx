@@ -221,34 +221,74 @@ export default function LoginScreen() {
               </Pressable>
             </Animated.View>
 
-            {/* Divider */}
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Ionicons name="lock-closed" size={15} color="#98A2B3" />
-              <View style={styles.dividerLine} />
-            </View>
-            <Text style={styles.authorized}>Authorized Factory Personnel Only</Text>
-
+          <View style={styles.skipGroup}>
             <Pressable
-              style={[styles.skipButton, role !== 'worker' && styles.skipButtonDisabled]}
-              disabled={role !== 'worker'}
-              onPress={() => router.replace('/worker-dashboard')}
-              accessibilityRole="button"
-              accessibilityLabel="Skip login and go to worker dashboard">
-              <Ionicons
-                name="play-skip-forward-outline"
-                size={13}
-                color={role === 'worker' ? '#E11900' : '#B7BDC9'}
-              />
-              <Text
-                style={[
-                  styles.skipButtonText,
-                  role !== 'worker' && styles.skipButtonTextDisabled,
-                ]}>
-                Skip Login — Worker Dashboard
-              </Text>
-            </Pressable>
-          </View>
+            style={[
+             styles.skipButton,
+             role !== "worker" && styles.skipButtonDisabled,
+            ]}
+             disabled={role !== "worker"}
+              onPress={() => router.replace("/worker-dashboard")}>
+    <Ionicons
+      name="play-skip-forward-outline"
+      size={13}
+      color={role === "worker" ? "#E11900" : "#B7BDC9"}
+    />
+    <Text
+      style={[
+        styles.skipButtonText,
+        role !== "worker" && styles.skipButtonTextDisabled,
+      ]}>
+      Skip Login • Worker Dashboard
+    </Text>
+  </Pressable>
+
+  <Pressable
+    style={[
+      styles.skipButton,
+      role !== "supervisor" && styles.skipButtonDisabled,
+    ]}
+    disabled={role !== "supervisor"}
+    onPress={() => router.replace("/supervisor-dashboard")}>
+    <Ionicons
+      name="play-skip-forward-outline"
+      size={13}
+      color={role === "supervisor" ? "#2F6FE0" : "#B7BDC9"}
+    />
+    <Text
+      style={[
+        styles.skipButtonText,
+        {
+          color: role === "supervisor" ? "#2F6FE0" : "#B7BDC9",
+        },
+      ]}>
+      Skip Login • Supervisor Dashboard
+    </Text>
+  </Pressable>
+
+  <Pressable
+    style={[
+      styles.skipButton,
+      role !== "admin" && styles.skipButtonDisabled,
+    ]}
+    disabled={role !== "admin"}
+    onPress={() => router.replace("/admin-dashboard")}>
+    <Ionicons
+      name="play-skip-forward-outline"
+      size={13}
+      color={role === "admin" ? "#7A4DF5" : "#B7BDC9"}
+    />
+    <Text
+      style={[
+        styles.skipButtonText,
+        {
+          color: role === "admin" ? "#7A4DF5" : "#B7BDC9",
+        },
+      ]}>
+      Skip Login • Admin Dashboard
+    </Text>
+  </Pressable>
+</View>
 
           {/* Trust columns */}
           <View style={styles.trustRow}>
@@ -269,8 +309,9 @@ export default function LoginScreen() {
               <Text style={styles.footerText}>Built for safety. Designed for people.</Text>
             </View>
           </View>
-        </ScrollView>
-      </SafeAreaView>
+    </View>        
+    </ScrollView>    
+    </SafeAreaView>
     </View>
   );
 }
@@ -582,4 +623,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#8A93A6',
   },
+  skipGroup: {
+  marginTop: 16,
+  gap: 10,
+ },
 });
