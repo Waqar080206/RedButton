@@ -1,7 +1,17 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRef } from 'react';
-import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useRef, useState } from 'react';
+import {
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LogoMark } from '@/components/landing/logo-mark';
@@ -9,15 +19,40 @@ import { MaxContentWidth } from '@/constants/theme';
 
 const NAV_HEIGHT = 78;
 
-const NAV_ITEMS = [
-  { key: 'home', label: 'Home', icon: 'home' as const },
-  { key: 'profile', label: 'Profile', icon: 'person-outline' as const },
-  { key: 'settings', label: 'Settings', icon: 'settings-outline' as const },
+type NavKey = 'home' | 'profile' | 'settings';
+
+const NAV_ITEMS: { key: NavKey; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { key: 'home', label: 'Home', icon: 'home' },
+  { key: 'profile', label: 'Profile', icon: 'person-outline' },
+  { key: 'settings', label: 'Settings', icon: 'settings-outline' },
 ];
 
 export default function WorkerDashboardScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const scale = useRef(new Animated.Value(1)).current;
+  const [activeTab, setActiveTab] = useState<NavKey>('home');
+
+  const press = useRef(new Animated.Value(0)).current;
+  const capTranslateY = press.interpolate({ inputRange: [0, 1], outputRange: [0, 7] });
+  const capScale = press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.985] });
+  const rimOpacity = press.interpolate({ inputRange: [0, 1], outputRange: [0.28, 0.06] });
+  const highlightOpacity = press.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0.15] });
+
+  const pressIn = () =>
+    Animated.timing(press, {
+      toValue: 1,
+      duration: 90,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+
+  const pressOut = () =>
+    Animated.spring(press, {
+      toValue: 0,
+      friction: 4,
+      tension: 140,
+      useNativeDriver: true,
+    }).start();
 
   return (
     <View style={styles.page}>
@@ -65,35 +100,40 @@ export default function WorkerDashboardScreen() {
           <View style={styles.buttonZone}>
             <View style={styles.glow} pointerEvents="none" />
 
-            <Animated.View style={{ transform: [{ scale }] }}>
-              <Pressable
-                onPressIn={() =>
-                  Animated.spring(scale, { toValue: 0.96, useNativeDriver: true }).start()
-                }
-                onPressOut={() =>
-                  Animated.spring(scale, {
-                    toValue: 1,
-                    friction: 5,
-                    useNativeDriver: true,
-                  }).start()
-                }
-                accessibilityRole="button"
-                accessibilityLabel="Press Red Button in an emergency">
-                <View style={styles.redButtonBase}>
+            <Pressable
+              onPressIn={pressIn}
+              onPressOut={pressOut}
+              onPress={() => router.push('/chat')}
+              accessibilityRole="button"
+              accessibilityLabel="Press Red Button in an emergency">
+              {/* Fixed white bezel — does not move */}
+              <View style={styles.redButtonBase}>
+                <Animated.View
+                  style={[styles.capShadowRim, { opacity: rimOpacity }]}
+                  pointerEvents="none"
+                />
+
+                {/* Only the red cap animates */}
+                <Animated.View
+                  style={{ transform: [{ translateY: capTranslateY }, { scale: capScale }] }}>
                   <LinearGradient
-                    colors={['#FF5240', '#E11900', '#B81400']}
+                    colors={['#FF5B47', '#E11900', '#7A0D00']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
                     style={styles.redButtonCap}>
+                    <Animated.View
+                      style={[styles.capHighlight, { opacity: highlightOpacity }]}
+                      pointerEvents="none"
+                    />
                     <View style={styles.targetRing}>
                       <View style={styles.targetDot} />
                     </View>
                     <Text style={styles.pressLabel}>PRESS</Text>
                     <Text style={styles.pressSubLabel}>RED BUTTON</Text>
                   </LinearGradient>
-                </View>
-              </Pressable>
-            </Animated.View>
+                </Animated.View>
+              </View>
+            </Pressable>
           </View>
 
           {/* Warning card */}
@@ -112,26 +152,25 @@ export default function WorkerDashboardScreen() {
       </SafeAreaView>
 
       {/* Bottom nav */}
-      <View style={[styles.navBar, { bottom: insets.bottom + 16 }]}>
-        {NAV_ITEMS.map((item) => {
-          const selected = item.key === 'home';
-          return (
-            <Pressable
-              key={item.key}
-              style={[styles.navItem, selected && styles.navItemSelected]}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}>
-              <Ionicons
-                name={item.icon}
-                size={22}
-                color={selected ? '#E11900' : '#5B6472'}
-              />
-              <Text style={[styles.navLabel, selected && styles.navLabelSelected]}>
-                {item.label}
-              </Text>
-            </Pressable>
-          );
-        })}
+      <View style={[styles.navBarWrap, { bottom: insets.bottom + 16 }]} pointerEvents="box-none">
+        <View style={styles.navBar}>
+          {NAV_ITEMS.map((item) => {
+            const selected = activeTab === item.key;
+            return (
+              <Pressable
+                key={item.key}
+                onPress={() => setActiveTab(item.key)}
+                style={[styles.navItem, selected && styles.navItemSelected]}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}>
+                <Ionicons name={item.icon} size={22} color={selected ? '#E11900' : '#5B6472'} />
+                <Text style={[styles.navLabel, selected && styles.navLabelSelected]}>
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -263,11 +302,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: 16,
+    borderWidth: 3,
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#F2F3F7',
+    borderRightColor: '#F2F3F7',
+    borderBottomColor: '#DCE0E7',
     shadowColor: '#E11900',
     shadowOpacity: 0.3,
     shadowRadius: 40,
     shadowOffset: { width: 0, height: 20 },
     elevation: 14,
+  },
+  capShadowRim: {
+    position: 'absolute',
+    bottom: 6,
+    left: '50%',
+    marginLeft: -95,
+    width: 190,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#5A0900',
+    ...Platform.select({
+      web: { filter: 'blur(14px)' },
+      default: { filter: [{ blur: 14 }] },
+    }),
   },
   redButtonCap: {
     width: 258,
@@ -276,11 +334,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(122,13,0,0.35)',
     shadowColor: '#7A0D00',
     shadowOpacity: 0.4,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 10 },
     elevation: 10,
+  },
+  capHighlight: {
+    position: 'absolute',
+    top: 16,
+    left: '50%',
+    marginLeft: -70,
+    width: 140,
+    height: 66,
+    borderRadius: 60,
+    backgroundColor: '#ffffff',
+    ...Platform.select({
+      web: { filter: 'blur(18px)' },
+      default: { filter: [{ blur: 18 }] },
+    }),
   },
   targetRing: {
     width: 46,
@@ -347,11 +421,17 @@ const styles = StyleSheet.create({
   },
 
   /* Bottom nav */
-  navBar: {
+  navBarWrap: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  navBar: {
     flexDirection: 'row',
+    width: '100%',
+    maxWidth: MaxContentWidth,
     backgroundColor: '#ffffff',
     borderRadius: 22,
     padding: 8,
@@ -361,9 +441,6 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: MaxContentWidth,
   },
   navItem: {
     flex: 1,

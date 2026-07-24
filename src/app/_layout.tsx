@@ -15,6 +15,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" />
         <Stack.Screen name="worker-dashboard" />
+        <Stack.Screen name="chat" />
       </Stack>
     </ThemeProvider>
   );

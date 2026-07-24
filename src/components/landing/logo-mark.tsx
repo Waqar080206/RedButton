@@ -1,19 +1,20 @@
-import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
+import { StyleSheet } from 'react-native';
+
+const ASPECT_RATIO = 112 / 126;
 
 export function LogoMark({ size = 40 }: { size?: number }) {
   return (
-    <View style={[styles.shield, { width: size, height: size, borderRadius: size * 0.28 }]}>
-      <Ionicons name="radio-button-on" size={size * 0.42} color="#ffffff" />
-    </View>
+    <Image
+      source={require('@/assets/images/app-logo.png')}
+      style={[styles.logo, { height: size, width: size * ASPECT_RATIO }]}
+      contentFit="contain"
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  shield: {
-    backgroundColor: '#E11900',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transform: [{ rotate: '0deg' }],
+  logo: {
+    aspectRatio: ASPECT_RATIO,
   },
 });

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { LogoMark } from '@/components/landing/logo-mark';
 import { MaxContentWidth } from '@/constants/theme';
 
 type Role = 'worker' | 'supervisor' | 'admin';
@@ -93,14 +94,7 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled">
           {/* Brand header */}
           <View style={styles.header}>
-            <View style={styles.shieldWrap}>
-              <Ionicons name="shield" size={92} color="#E11900" />
-              <View style={styles.shieldIconOverlay}>
-                <View style={styles.targetRing}>
-                  <View style={styles.targetDot} />
-                </View>
-              </View>
-            </View>
+            <LogoMark size={92} />
 
             <Text style={styles.wordmark}>
               <Text style={styles.wordmarkRed}>Red</Text>
@@ -330,37 +324,6 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignItems: 'center',
     gap: 12,
-  },
-  shieldWrap: {
-    width: 92,
-    height: 92,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shieldIconOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 6,
-  },
-  targetRing: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 5,
-    borderColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  targetDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#ffffff',
   },
   wordmark: {
     marginTop: 4,
