@@ -1,5 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   Animated,
@@ -69,6 +70,7 @@ const TRUST = [
 ];
 
 export default function LoginScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -232,6 +234,26 @@ export default function LoginScreen() {
               <View style={styles.dividerLine} />
             </View>
             <Text style={styles.authorized}>Authorized Factory Personnel Only</Text>
+
+            <Pressable
+              style={[styles.skipButton, role !== 'worker' && styles.skipButtonDisabled]}
+              disabled={role !== 'worker'}
+              onPress={() => router.push('/worker-dashboard')}
+              accessibilityRole="button"
+              accessibilityLabel="Skip login and go to worker dashboard">
+              <Ionicons
+                name="play-skip-forward-outline"
+                size={13}
+                color={role === 'worker' ? '#E11900' : '#B7BDC9'}
+              />
+              <Text
+                style={[
+                  styles.skipButtonText,
+                  role !== 'worker' && styles.skipButtonTextDisabled,
+                ]}>
+                Skip Login — Worker Dashboard
+              </Text>
+            </Pressable>
           </View>
 
           {/* Trust columns */}
@@ -521,6 +543,28 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
     fontWeight: '500',
+  },
+  skipButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(225,25,0,0.06)',
+  },
+  skipButtonDisabled: {
+    backgroundColor: '#F0F1F5',
+  },
+  skipButtonText: {
+    fontSize: 12.5,
+    color: '#E11900',
+    fontWeight: '700',
+  },
+  skipButtonTextDisabled: {
+    color: '#B7BDC9',
   },
 
   /* Trust */
