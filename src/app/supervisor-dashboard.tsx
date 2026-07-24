@@ -1,7 +1,7 @@
 import { LogoMark } from "@/components/landing/logo-mark";
 import { MaxContentWidth } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { Href, useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 const NAV_HEIGHT = 78;
@@ -12,7 +12,7 @@ type NavItem = {
   key: NavKey;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  route: string;
+  route: Href;
 };
 
 const NAV_ITEMS: NavItem[] = [

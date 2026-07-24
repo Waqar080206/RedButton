@@ -1,6 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { Href, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   Animated,
@@ -25,7 +25,7 @@ type NavItem = {
   key: NavKey;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  route: string;
+  route: Href;
 };
 
 const NAV_ITEMS: NavItem[] = [

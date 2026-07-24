@@ -1,6 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import { useRouter } from 'expo-router';
+import { Href, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -25,7 +25,7 @@ type NavItem = {
   key: NavKey;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  route: string;
+  route: Href;
   badge?: boolean;
 };
 
