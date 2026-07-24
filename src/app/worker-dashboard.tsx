@@ -19,12 +19,34 @@ import { MaxContentWidth } from '@/constants/theme';
 
 const NAV_HEIGHT = 78;
 
-type NavKey = 'home' | 'profile' | 'settings';
+type NavKey = "home" | "profile" | "settings";
 
-const NAV_ITEMS: { key: NavKey; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { key: 'home', label: 'Home', icon: 'home' },
-  { key: 'profile', label: 'Profile', icon: 'person-outline' },
-  { key: 'settings', label: 'Settings', icon: 'settings-outline' },
+type NavItem = {
+  key: NavKey;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  route: string;
+};
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    key: 'home',
+    label: 'Home',
+    icon: 'home',
+    route: '/worker-dashboard',
+  },
+  {
+    key: 'profile',
+    label: 'Profile',
+    icon: 'person-outline',
+    route: '/profile',
+  },
+  {
+    key: 'settings',
+    label: 'Settings',
+    icon: 'settings-outline',
+    route: '/settings',
+  },
 ];
 
 export default function WorkerDashboardScreen() {
@@ -159,7 +181,7 @@ export default function WorkerDashboardScreen() {
             return (
               <Pressable
                 key={item.key}
-                onPress={() => setActiveTab(item.key)}
+                onPress={() => {  setActiveTab(item.key);  router.navigate(item.route);}}
                 style={[styles.navItem, selected && styles.navItemSelected]}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}>
