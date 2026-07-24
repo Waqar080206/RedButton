@@ -1,5 +1,6 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -65,6 +66,7 @@ const FEATURES = [
 
 export default function HomeScreen() {
   const menuScale = useRef(new Animated.Value(1)).current;
+  const router = useRouter();
 
   return (
     <View style={styles.page}>
@@ -127,7 +129,12 @@ export default function HomeScreen() {
 
           {/* CTAs */}
           <View style={styles.ctaGroup}>
-            <PrimaryButton label="Sign In" icon="shield-checkmark" variant="primary" />
+            <PrimaryButton
+              label="Sign In"
+              icon="shield-checkmark"
+              variant="primary"
+              onPress={() => router.push('/login')}
+            />
             <PrimaryButton label="Learn More" icon="book-outline" variant="secondary" />
           </View>
 
