@@ -2,6 +2,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,62 +12,61 @@ import { LogoMark } from '@/components/landing/logo-mark';
 import { PrimaryButton } from '@/components/landing/primary-button';
 import { SectionBadge } from '@/components/landing/section-badge';
 import { StatItem } from '@/components/landing/stat-item';
+import { LanguageSelector } from '@/components/language-selector';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 
-const STATS = [
+const STAT_ITEMS = [
   {
     icon: <MaterialIcons name="precision-manufacturing" size={18} color="#5B5FE9" />,
     iconBg: 'rgba(91,95,233,0.12)',
     value: '2,458',
-    label: 'Machines\nProtected',
+    key: 'machines',
   },
   {
     icon: <Ionicons name="book" size={18} color="#E11900" />,
     iconBg: 'rgba(225,25,0,0.1)',
     value: '12,736',
-    label: 'Manuals\nIndexed',
+    key: 'manuals',
   },
   {
     icon: <Ionicons name="shield-checkmark" size={18} color="#22A55E" />,
     iconBg: 'rgba(34,165,94,0.12)',
     value: '3,982',
-    label: 'Incidents\nManaged',
+    key: 'incidents',
   },
   {
     icon: <Ionicons name="time" size={18} color="#F5A524" />,
     iconBg: 'rgba(245,165,36,0.14)',
     value: '2.4 min',
-    label: 'Avg. Response\nTime',
+    key: 'avgResponse',
   },
 ];
 
-const FEATURES = [
+const FEATURE_ITEMS = [
   {
     icon: <Ionicons name="chatbubbles" size={20} color="#E11900" />,
     iconBg: 'rgba(225,25,0,0.1)',
     accentColor: '#E11900',
-    title: 'Instant\nGuidance',
-    description: 'AI answers in seconds using voice, text, photos or videos.',
+    key: 'instant',
   },
   {
     icon: <Ionicons name="document-text" size={20} color="#2F6FE0" />,
     iconBg: 'rgba(47,111,224,0.1)',
     accentColor: '#2F6FE0',
-    title: 'Trusted\nDocumentation',
-    description: 'Every response is grounded in your manuals with citations.',
+    key: 'docs',
   },
   {
     icon: <Ionicons name="people" size={20} color="#22A55E" />,
     iconBg: 'rgba(34,165,94,0.1)',
     accentColor: '#22A55E',
-    title: 'Human\nOversight',
-    description: 'Supervisors approve critical actions before they happen.',
+    key: 'oversight',
   },
 ];
 
 export default function HomeScreen() {
   const menuScale = useMemo(() => new Animated.Value(1), []);
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.page}>
@@ -88,41 +88,40 @@ export default function HomeScreen() {
                 Red <Text style={styles.brandTextBold}>Button</Text>
               </Text>
             </View>
-            <Animated.View style={{ transform: [{ scale: menuScale }] }}>
-              <Pressable
-                onPressIn={() =>
-                  Animated.spring(menuScale, { toValue: 0.9, useNativeDriver: true }).start()
-                }
-                onPressOut={() =>
-                  Animated.spring(menuScale, {
-                    toValue: 1,
-                    friction: 5,
-                    useNativeDriver: true,
-                  }).start()
-                }
-                style={styles.menuButton}
-                accessibilityRole="button"
-                accessibilityLabel="Open menu">
-                <Ionicons name="menu" size={20} color="#0F1729" />
-              </Pressable>
-            </Animated.View>
+            <View style={styles.topBarActions}>
+              <LanguageSelector variant="iconButton" />
+
+              <Animated.View style={{ transform: [{ scale: menuScale }] }}>
+                <Pressable
+                  onPressIn={() =>
+                    Animated.spring(menuScale, { toValue: 0.9, useNativeDriver: true }).start()
+                  }
+                  onPressOut={() =>
+                    Animated.spring(menuScale, {
+                      toValue: 1,
+                      friction: 5,
+                      useNativeDriver: true,
+                    }).start()
+                  }
+                  style={styles.menuButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('landing.menuA11y')}>
+                  <Ionicons name="menu" size={20} color="#0F1729" />
+                </Pressable>
+              </Animated.View>
+            </View>
           </View>
 
           {/* Hero */}
           <View style={styles.hero}>
-            <SectionBadge label="AI-POWERED SAFETY" />
+            <SectionBadge label={t('landing.badge')} />
 
             <View style={styles.headlineBlock}>
-              <Text style={styles.headline}>When every</Text>
-              <Text style={styles.headline}>second matters,</Text>
-              <Text style={[styles.headline, styles.headlineRed]}>press the</Text>
-              <Text style={[styles.headline, styles.headlineRed]}>Red Button.</Text>
+              <Text style={styles.headline}>{t('landing.hero.line1')}</Text>
+              <Text style={[styles.headline, styles.headlineRed]}>{t('landing.hero.line2')}</Text>
             </View>
 
-            <Text style={styles.subhead}>
-              Get instant, machine-specific guidance from your manuals, with human oversight
-              for every critical decision.
-            </Text>
+            <Text style={styles.subhead}>{t('landing.subhead')}</Text>
 
             <HeroIllustration />
           </View>
@@ -130,25 +129,42 @@ export default function HomeScreen() {
           {/* CTAs */}
           <View style={styles.ctaGroup}>
             <PrimaryButton
-              label="Sign In"
+              label={t('landing.cta.signIn')}
               icon="shield-checkmark"
               variant="primary"
               onPress={() => router.push('/login')}
             />
-            <PrimaryButton label="Learn More" icon="book-outline" variant="secondary" />
+            <PrimaryButton
+              label={t('landing.cta.learnMore')}
+              icon="book-outline"
+              variant="secondary"
+            />
           </View>
 
           {/* Feature cards */}
           <View style={styles.featureRow}>
-            {FEATURES.map((f) => (
-              <FeatureCard key={f.title} {...f} />
+            {FEATURE_ITEMS.map((f) => (
+              <FeatureCard
+                key={f.key}
+                icon={f.icon}
+                iconBg={f.iconBg}
+                accentColor={f.accentColor}
+                title={t(`landing.features.${f.key}.title`)}
+                description={t(`landing.features.${f.key}.desc`)}
+              />
             ))}
           </View>
 
           {/* Stats */}
           <View style={styles.statsCard}>
-            {STATS.map((s) => (
-              <StatItem key={s.label} {...s} />
+            {STAT_ITEMS.map((s) => (
+              <StatItem
+                key={s.key}
+                icon={s.icon}
+                iconBg={s.iconBg}
+                value={s.value}
+                label={t(`landing.stats.${s.key}`)}
+              />
             ))}
           </View>
 
@@ -158,8 +174,8 @@ export default function HomeScreen() {
               <Ionicons name="shield-checkmark" size={18} color="#E11900" />
             </View>
             <View style={styles.trustTextWrap}>
-              <Text style={styles.trustTitle}>Built for factories. Trusted for safety.</Text>
-              <Text style={styles.trustSubtitle}>Your data is secure and always private.</Text>
+              <Text style={styles.trustTitle}>{t('landing.trust.title')}</Text>
+              <Text style={styles.trustSubtitle}>{t('landing.trust.subtitle')}</Text>
             </View>
             <Ionicons name="shield-checkmark-outline" size={22} color="rgba(225,25,0,0.4)" />
           </View>
@@ -195,6 +211,11 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.two,
   },
   brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  topBarActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,

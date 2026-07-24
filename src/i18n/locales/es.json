@@ -1,0 +1,115 @@
+{
+  "login": {
+    "tagline": "Plataforma de respuesta a emergencias con IA",
+    "pillText": "Orientación inteligente. Supervisión humana. Seguridad real.",
+    "welcome": "¡Bienvenido de nuevo!",
+    "welcomeSub": "Inicia sesión para continuar con tu cuenta",
+    "emailPlaceholder": "Correo electrónico",
+    "passwordPlaceholder": "Contraseña",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "loginAs": "Iniciar sesión como",
+    "roles": {
+      "worker": "Trabajador",
+      "supervisor": "Supervisor",
+      "admin": "Administrador"
+    },
+    "rememberMe": "Recordarme",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "signIn": "Iniciar sesión",
+    "skipWorker": "Omitir inicio de sesión • Panel del trabajador",
+    "skipSupervisor": "Omitir inicio de sesión • Panel del supervisor",
+    "skipAdmin": "Omitir inicio de sesión • Panel del administrador",
+    "trust": {
+      "secure": {
+        "title": "Seguro",
+        "desc": "Tus datos están cifrados y siempre protegidos"
+      },
+      "reliable": {
+        "title": "Confiable",
+        "desc": "Basado en manuales y procedimientos reales"
+      },
+      "trusted": {
+        "title": "De confianza",
+        "desc": "Creado para fábricas, por expertos en seguridad"
+      }
+    },
+    "footerVersion": "Red Button v1.0.0",
+    "footerText": "Creado para la seguridad. Diseñado para las personas."
+  },
+  "landing": {
+    "menuA11y": "Abrir menú",
+    "badge": "SEGURIDAD IMPULSADA POR IA",
+    "hero": {
+      "line1": "Cuando cada segundo cuenta,",
+      "line2": "presiona el botón rojo."
+    },
+    "subhead": "Obtén orientación instantánea y específica de la máquina desde tus manuales, con supervisión humana en cada decisión crítica.",
+    "cta": {
+      "signIn": "Iniciar sesión",
+      "learnMore": "Más información"
+    },
+    "features": {
+      "instant": {
+        "title": "Orientación\nInstantánea",
+        "desc": "La IA responde en segundos usando voz, texto, fotos o videos."
+      },
+      "docs": {
+        "title": "Documentación\nConfiable",
+        "desc": "Cada respuesta se basa en tus manuales, con citas."
+      },
+      "oversight": {
+        "title": "Supervisión\nHumana",
+        "desc": "Los supervisores aprueban las acciones críticas antes de que ocurran."
+      }
+    },
+    "stats": {
+      "machines": "Máquinas\nProtegidas",
+      "manuals": "Manuales\nIndexados",
+      "incidents": "Incidentes\nGestionados",
+      "avgResponse": "Tiempo de\nRespuesta Prom."
+    },
+    "trust": {
+      "title": "Creado para fábricas. Confiable para la seguridad.",
+      "subtitle": "Tus datos están seguros y siempre son privados."
+    }
+  },
+  "settings": {
+    "eyebrow": "Configuración",
+    "title": "Preferencias de seguridad",
+    "subtitle": "Configura la orientación de emergencia, las alertas y la preparación del dispositivo para la app del trabajador.",
+    "alert": {
+      "title": "La activación requiere confirmación",
+      "text": "Las acciones de alto riesgo permanecen protegidas por confirmación mantenida y registro de auditoría."
+    },
+    "sectionPreferences": "Preferencias del trabajador",
+    "prefs": {
+      "readAloud": {
+        "title": "Leer orientación en voz alta",
+        "detail": "Usa texto a voz para los pasos de emergencia en áreas ruidosas."
+      },
+      "escalation": {
+        "title": "Alertas de escalamiento",
+        "detail": "Notifica a este dispositivo cuando un supervisor se una."
+      },
+      "cacheSOPs": {
+        "title": "Guardar últimos procedimientos",
+        "detail": "Mantén los procedimientos de la máquina disponibles con conectividad débil."
+      }
+    },
+    "sectionReadiness": "Preparación del dispositivo",
+    "readiness": {
+      "camera": "Permiso de cámara",
+      "microphone": "Permiso de micrófono",
+      "location": "Acceso a la ubicación",
+      "sopCache": "Caché de procedimientos",
+      "ready": "Listo",
+      "whileUsing": "Mientras se usa",
+      "updated": "Actualizado"
+    },
+    "language": {
+      "title": "Idioma",
+      "detail": "Elige tu idioma preferido para la app."
+    }
+  }
+}

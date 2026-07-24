@@ -1,7 +1,8 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -13,69 +14,24 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type StepAnswer = {
-  intro: string;
-  steps: string[];
-  citation: { doc: string; page: string };
-};
+import { MaxContentWidth } from '@/constants/theme';
+import { Citation, sendChatMessage } from '@/services/chat';
+
+const COMPOSER_FLOAT_GAP = 16;
+const COMPOSER_RESERVED_SPACE = 96;
+const SESSION_STORAGE_KEY = 'redbutton.chat_session_id';
 
 type ChatMessage =
   | { id: string; sender: 'assistant'; kind: 'text'; text: string }
   | { id: string; sender: 'user'; kind: 'text'; text: string }
-  | { id: string; sender: 'assistant'; kind: 'answer'; answer: StepAnswer }
-  | { id: string; sender: 'assistant'; kind: 'escalation'; text: string };
-
-const KEYWORD_RESPONSES: { keywords: string[]; answer: StepAnswer }[] = [
-  {
-    keywords: ['smoke', 'fire', 'overheat', 'hot', 'burning'],
-    answer: {
-      intro: 'Possible hydraulic overheat detected on the motor assembly.',
-      steps: [
-        'Hit the emergency stop on the control panel.',
-        'Do not touch the motor housing — surface may exceed 80°C.',
-        'Evacuate a 3m radius and ventilate the area.',
-        'Wait for the thermal sensor to reset before restart.',
-      ],
-      citation: { doc: 'Hydraulic Press Manual', page: '84' },
-    },
-  },
-  {
-    keywords: ['jam', 'stuck', "won't stop", 'wont stop', 'grinding'],
-    answer: {
-      intro: 'Material jam detected in the feed mechanism.',
-      steps: [
-        'Press the yellow stop bar on the conveyor frame.',
-        'Lock out power at the isolation switch before clearing debris.',
-        'Manually rotate the feed wheel backward to release tension.',
-        'Log the jam in the shift report before resuming.',
-      ],
-      citation: { doc: 'Conveyor Line SOP', page: '12' },
-    },
-  },
-];
+  | { id: string; sender: 'assistant'; kind: 'answer'; text: string; citations: Citation[] }
+  | { id: string; sender: 'assistant'; kind: 'escalation'; text: string }
+  | { id: string; sender: 'assistant'; kind: 'error'; text: string };
 
 function replyId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function generateReply(userText: string): ChatMessage {
-  const lower = userText.toLowerCase();
-  const match = KEYWORD_RESPONSES.find((entry) =>
-    entry.keywords.some((keyword) => lower.includes(keyword)),
-  );
-
-  if (match) {
-    return { id: replyId(), sender: 'assistant', kind: 'answer', answer: match.answer };
-  }
-
-  return {
-    id: replyId(),
-    sender: 'assistant',
-    kind: 'escalation',
-    text: "This doesn't match confident guidance in the manual. Escalating to your on-site Safety Officer now.",
-  };
 }
 
 const SUGGESTIONS = [
@@ -86,6 +42,7 @@ const SUGGESTIONS = [
 
 export default function ChatScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -98,13 +55,20 @@ export default function ChatScreen() {
   ]);
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(SESSION_STORAGE_KEY).then((stored) => {
+      if (stored) setSessionId(stored);
+    });
+  }, []);
 
   const handleBack = () => {
     if (router.canGoBack()) router.back();
     else router.replace('/worker-dashboard');
   };
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isThinking) return;
 
@@ -115,16 +79,42 @@ export default function ChatScreen() {
     setInput('');
     setIsThinking(true);
 
-    setTimeout(() => {
-      setMessages((prev) => [...prev, generateReply(trimmed)]);
+    try {
+      const res = await sendChatMessage(trimmed, { sessionId });
+      setSessionId(res.session_id);
+      AsyncStorage.setItem(SESSION_STORAGE_KEY, res.session_id);
+
+      setMessages((prev) => [
+        ...prev,
+        res.found_in_manuals
+          ? {
+              id: replyId(),
+              sender: 'assistant',
+              kind: 'answer',
+              text: res.answer,
+              citations: res.citations,
+            }
+          : { id: replyId(), sender: 'assistant', kind: 'escalation', text: res.answer },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: replyId(),
+          sender: 'assistant',
+          kind: 'error',
+          text: 'Could not reach the assistant. Check your connection and try again.',
+        },
+      ]);
+    } finally {
       setIsThinking(false);
-    }, 1100);
+    }
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.page}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
@@ -171,7 +161,7 @@ export default function ChatScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.suggestionsRow}
+          style={[styles.suggestionsRow, { marginBottom: COMPOSER_RESERVED_SPACE + insets.bottom }]}
           contentContainerStyle={styles.suggestionsContent}>
           {SUGGESTIONS.map((s) => (
             <Pressable
@@ -182,8 +172,12 @@ export default function ChatScreen() {
             </Pressable>
           ))}
         </ScrollView>
+      </SafeAreaView>
 
-        {/* Composer */}
+      {/* Composer */}
+      <View
+        style={[styles.composerWrap, { bottom: insets.bottom + COMPOSER_FLOAT_GAP }]}
+        pointerEvents="box-none">
         <View style={styles.composer}>
           <Pressable style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Attach photo">
             <Ionicons name="camera-outline" size={22} color="#5B6472" />
@@ -219,7 +213,7 @@ export default function ChatScreen() {
             </LinearGradient>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -253,32 +247,38 @@ function MessageBubble({ message }: { message: ChatMessage }) {
     );
   }
 
-  const { answer } = message;
+  if (message.kind === 'error') {
+    return (
+      <View style={[styles.bubble, styles.errorBubble]}>
+        <View style={styles.escalationHeader}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={18} color="#B42318" />
+          <Text style={styles.errorTitle}>Connection problem</Text>
+        </View>
+        <Text style={styles.errorText}>{message.text}</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={[styles.bubble, styles.assistantBubble]}>
+    <View style={[styles.bubble, styles.answerBubble]}>
       <View style={styles.confidentHeader}>
         <Ionicons name="checkmark-circle" size={16} color="#22A55E" />
         <Text style={styles.confidentLabel}>Grounded answer</Text>
       </View>
-      <Text style={styles.assistantText}>{answer.intro}</Text>
+      <Text style={styles.assistantText}>{message.text}</Text>
 
-      <View style={styles.stepsList}>
-        {answer.steps.map((step, index) => (
-          <View key={step} style={styles.stepRow}>
-            <View style={styles.stepNumber}>
-              <Text style={styles.stepNumberText}>{index + 1}</Text>
+      {message.citations.length > 0 && (
+        <View style={styles.citationsList}>
+          {message.citations.map((citation, index) => (
+            <View key={`${citation.filename}-${citation.chunk_index}-${index}`} style={styles.citationRow}>
+              <Ionicons name="document-text-outline" size={14} color="#2F6FE0" />
+              <Text style={styles.citationText}>
+                {citation.filename} <Text style={styles.citationPage}>chunk {citation.chunk_index}</Text>
+              </Text>
             </View>
-            <Text style={styles.stepText}>{step}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.citationRow}>
-        <Ionicons name="document-text-outline" size={14} color="#2F6FE0" />
-        <Text style={styles.citationText}>
-          {answer.citation.doc} <Text style={styles.citationPage}>p. {answer.citation.page}</Text>
-        </Text>
-      </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -407,43 +407,25 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  stepsList: {
-    gap: 8,
-    marginTop: 4,
+  answerBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#EDEEF3',
+    borderBottomLeftRadius: 4,
+    gap: 6,
   },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  stepNumber: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(225,25,0,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 1,
-  },
-  stepNumberText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#E11900',
-  },
-  stepText: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#1F2733',
+  citationsList: {
+    gap: 4,
+    marginTop: 6,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F1F5',
   },
   citationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 6,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F1F5',
   },
   citationText: {
     fontSize: 12.5,
@@ -477,6 +459,24 @@ const styles = StyleSheet.create({
     color: '#7A4200',
   },
 
+  /* Error */
+  errorBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(180,35,24,0.08)',
+    borderBottomLeftRadius: 4,
+    gap: 6,
+  },
+  errorTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#B42318',
+  },
+  errorText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#7A2015',
+  },
+
   /* Suggestions */
   suggestionsRow: {
     flexGrow: 0,
@@ -501,16 +501,28 @@ const styles = StyleSheet.create({
   },
 
   /* Composer */
+  composerWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 16,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#EDEEF3',
+    borderRadius: 22,
+    shadowColor: '#0F1729',
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
   iconButton: {
     width: 40,

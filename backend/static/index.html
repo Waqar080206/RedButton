@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>Red Button RAG Test Console</title>
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; background: #111; color: #eee; }
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem 6.5rem; background: #111; color: #eee; }
   h1 { font-size: 1.4rem; }
   section { border: 1px solid #333; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
   input, select, button, textarea { font-size: 1rem; padding: 0.4rem; margin: 0.2rem 0; }
@@ -13,7 +13,26 @@
   button:hover { background: #e85555; }
   #docList { list-style: none; padding: 0; }
   #docList li { padding: 0.4rem 0; border-bottom: 1px solid #333; display: flex; justify-content: space-between; }
-  #chatLog { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
+  #chatLog { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; max-height: 50vh; overflow-y: auto; }
+  #chatBar {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 1.5rem;
+    width: min(900px, calc(100% - 2rem));
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 0.6rem 0.75rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  #chatBar input[type=text] { margin: 0; flex: 1; }
+  #chatBar button { margin: 0; white-space: nowrap; }
+  #chatBar #newConvoBtn { background: #333; }
+  #chatBar #newConvoBtn:hover { background: #444; }
   .msg { padding: 0.6rem 0.8rem; border-radius: 6px; }
   .msg.user { background: #22344a; align-self: flex-end; }
   .msg.bot { background: #262626; }
@@ -55,12 +74,13 @@
   <h2>Ask a question</h2>
   <input type="text" id="machineIdChat" placeholder="machine_id filter (optional)">
   <div id="chatLog"></div>
-  <form id="chatForm">
-    <input type="text" id="questionInput" placeholder="Ask about a machine..." required>
-    <button type="submit">Ask</button>
-    <button type="button" id="newConvoBtn">New conversation</button>
-  </form>
 </section>
+
+<form id="chatBar">
+  <input type="text" id="questionInput" placeholder="Ask about a machine..." required>
+  <button type="submit">Ask</button>
+  <button type="button" id="newConvoBtn">New conversation</button>
+</form>
 
 <script>
 const api = (path, opts) => fetch(path, opts).then(r => r.json());
@@ -187,7 +207,7 @@ function addMessage(text, sender, extra) {
   log.scrollTop = log.scrollHeight;
 }
 
-document.getElementById('chatForm').onsubmit = async (e) => {
+document.getElementById('chatBar').onsubmit = async (e) => {
   e.preventDefault();
   const question = document.getElementById('questionInput').value;
   const machineId = document.getElementById('machineIdChat').value;

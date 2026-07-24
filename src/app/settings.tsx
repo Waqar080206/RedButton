@@ -1,38 +1,28 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { LanguageSelector } from '@/components/language-selector';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 
-const PREFERENCES = [
-  {
-    icon: 'volume-high' as const,
-    title: 'Read guidance aloud',
-    detail: 'Use TTS for emergency steps in noisy areas.',
-    enabled: true,
-  },
-  {
-    icon: 'notifications' as const,
-    title: 'Escalation alerts',
-    detail: 'Notify this device when a supervisor joins.',
-    enabled: true,
-  },
-  {
-    icon: 'cloud-offline' as const,
-    title: 'Cache last SOPs',
-    detail: 'Keep machine procedures available during weak connectivity.',
-    enabled: true,
-  },
+const PREFERENCE_ITEMS = [
+  { key: 'readAloud', icon: 'volume-high' as const },
+  { key: 'escalation', icon: 'notifications' as const },
+  { key: 'cacheSOPs', icon: 'cloud-offline' as const },
 ];
 
 export default function SettingsScreen() {
-  const [preferences, setPreferences] = useState(PREFERENCES);
+  const { t } = useTranslation();
+  const [enabledMap, setEnabledMap] = useState<Record<string, boolean>>({
+    readAloud: true,
+    escalation: true,
+    cacheSOPs: true,
+  });
 
-  const togglePreference = (title: string) => {
-    setPreferences((current) =>
-      current.map((item) => (item.title === title ? { ...item, enabled: !item.enabled } : item)),
-    );
+  const togglePreference = (key: string) => {
+    setEnabledMap((current) => ({ ...current, [key]: !current[key] }));
   };
 
   return (
@@ -43,11 +33,9 @@ export default function SettingsScreen() {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Text style={styles.eyebrow}>Settings</Text>
-            <Text style={styles.title}>Safety preferences</Text>
-            <Text style={styles.subtitle}>
-              Configure emergency guidance, escalation, and device readiness for the worker app.
-            </Text>
+            <Text style={styles.eyebrow}>{t('settings.eyebrow')}</Text>
+            <Text style={styles.title}>{t('settings.title')}</Text>
+            <Text style={styles.subtitle}>{t('settings.subtitle')}</Text>
           </View>
 
           <View style={styles.alertCard}>
@@ -55,30 +43,36 @@ export default function SettingsScreen() {
               <Ionicons name="warning" size={22} color="#F5A524" />
             </View>
             <View style={styles.alertCopy}>
-              <Text style={styles.alertTitle}>Actuation requires confirmation</Text>
-              <Text style={styles.alertText}>
-                High-stakes actions stay behind hold-to-confirm and audit logging.
-              </Text>
+              <Text style={styles.alertTitle}>{t('settings.alert.title')}</Text>
+              <Text style={styles.alertText}>{t('settings.alert.text')}</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Worker Preferences</Text>
             <View style={styles.settingsCard}>
-              {preferences.map((item) => (
-                <View key={item.title} style={styles.settingRow}>
+              <LanguageSelector variant="settingsRow" />
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('settings.sectionPreferences')}</Text>
+            <View style={styles.settingsCard}>
+              {PREFERENCE_ITEMS.map((item) => (
+                <View key={item.key} style={styles.settingRow}>
                   <View style={styles.settingIcon}>
                     <Ionicons name={item.icon} size={19} color="#E11900" />
                   </View>
                   <View style={styles.settingCopy}>
-                    <Text style={styles.settingTitle}>{item.title}</Text>
-                    <Text style={styles.settingDetail}>{item.detail}</Text>
+                    <Text style={styles.settingTitle}>{t(`settings.prefs.${item.key}.title`)}</Text>
+                    <Text style={styles.settingDetail}>
+                      {t(`settings.prefs.${item.key}.detail`)}
+                    </Text>
                   </View>
                   <Switch
-                    value={item.enabled}
-                    onValueChange={() => togglePreference(item.title)}
+                    value={enabledMap[item.key]}
+                    onValueChange={() => togglePreference(item.key)}
                     trackColor={{ false: '#D4D8E1', true: '#F4A49A' }}
-                    thumbColor={item.enabled ? '#E11900' : '#FFFFFF'}
+                    thumbColor={enabledMap[item.key] ? '#E11900' : '#FFFFFF'}
                   />
                 </View>
               ))}
@@ -86,12 +80,21 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Device Readiness</Text>
+            <Text style={styles.sectionTitle}>{t('settings.sectionReadiness')}</Text>
             <View style={styles.readinessCard}>
-              <ReadinessRow label="Camera permission" value="Ready" />
-              <ReadinessRow label="Microphone permission" value="Ready" />
-              <ReadinessRow label="Location access" value="While using" />
-              <ReadinessRow label="SOP cache" value="Updated" />
+              <ReadinessRow label={t('settings.readiness.camera')} value={t('settings.readiness.ready')} />
+              <ReadinessRow
+                label={t('settings.readiness.microphone')}
+                value={t('settings.readiness.ready')}
+              />
+              <ReadinessRow
+                label={t('settings.readiness.location')}
+                value={t('settings.readiness.whileUsing')}
+              />
+              <ReadinessRow
+                label={t('settings.readiness.sopCache')}
+                value={t('settings.readiness.updated')}
+              />
             </View>
           </View>
         </ScrollView>

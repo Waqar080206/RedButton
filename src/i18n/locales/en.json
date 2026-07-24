@@ -1,0 +1,115 @@
+{
+  "login": {
+    "tagline": "AI Emergency Response Platform",
+    "pillText": "Smart guidance. Human oversight. Real safety.",
+    "welcome": "Welcome Back!",
+    "welcomeSub": "Sign in to continue to your account",
+    "emailPlaceholder": "Email address",
+    "passwordPlaceholder": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "loginAs": "Login as",
+    "roles": {
+      "worker": "Worker",
+      "supervisor": "Supervisor",
+      "admin": "Admin"
+    },
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "signIn": "Sign In",
+    "skipWorker": "Skip Login • Worker Dashboard",
+    "skipSupervisor": "Skip Login • Supervisor Dashboard",
+    "skipAdmin": "Skip Login • Admin Dashboard",
+    "trust": {
+      "secure": {
+        "title": "Secure",
+        "desc": "Your data is encrypted and always protected"
+      },
+      "reliable": {
+        "title": "Reliable",
+        "desc": "Grounded in real manuals and SOPs"
+      },
+      "trusted": {
+        "title": "Trusted",
+        "desc": "Built for factories, by safety experts"
+      }
+    },
+    "footerVersion": "Red Button v1.0.0",
+    "footerText": "Built for safety. Designed for people."
+  },
+  "landing": {
+    "menuA11y": "Open menu",
+    "badge": "AI-POWERED SAFETY",
+    "hero": {
+      "line1": "When every second matters,",
+      "line2": "press the Red Button."
+    },
+    "subhead": "Get instant, machine-specific guidance from your manuals, with human oversight for every critical decision.",
+    "cta": {
+      "signIn": "Sign In",
+      "learnMore": "Learn More"
+    },
+    "features": {
+      "instant": {
+        "title": "Instant\nGuidance",
+        "desc": "AI answers in seconds using voice, text, photos or videos."
+      },
+      "docs": {
+        "title": "Trusted\nDocumentation",
+        "desc": "Every response is grounded in your manuals with citations."
+      },
+      "oversight": {
+        "title": "Human\nOversight",
+        "desc": "Supervisors approve critical actions before they happen."
+      }
+    },
+    "stats": {
+      "machines": "Machines\nProtected",
+      "manuals": "Manuals\nIndexed",
+      "incidents": "Incidents\nManaged",
+      "avgResponse": "Avg. Response\nTime"
+    },
+    "trust": {
+      "title": "Built for factories. Trusted for safety.",
+      "subtitle": "Your data is secure and always private."
+    }
+  },
+  "settings": {
+    "eyebrow": "Settings",
+    "title": "Safety preferences",
+    "subtitle": "Configure emergency guidance, escalation, and device readiness for the worker app.",
+    "alert": {
+      "title": "Actuation requires confirmation",
+      "text": "High-stakes actions stay behind hold-to-confirm and audit logging."
+    },
+    "sectionPreferences": "Worker Preferences",
+    "prefs": {
+      "readAloud": {
+        "title": "Read guidance aloud",
+        "detail": "Use TTS for emergency steps in noisy areas."
+      },
+      "escalation": {
+        "title": "Escalation alerts",
+        "detail": "Notify this device when a supervisor joins."
+      },
+      "cacheSOPs": {
+        "title": "Cache last SOPs",
+        "detail": "Keep machine procedures available during weak connectivity."
+      }
+    },
+    "sectionReadiness": "Device Readiness",
+    "readiness": {
+      "camera": "Camera permission",
+      "microphone": "Microphone permission",
+      "location": "Location access",
+      "sopCache": "SOP cache",
+      "ready": "Ready",
+      "whileUsing": "While using",
+      "updated": "Updated"
+    },
+    "language": {
+      "title": "Language",
+      "detail": "Choose your preferred app language."
+    }
+  }
+}

@@ -2,6 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Animated,
   Platform,
@@ -21,57 +22,51 @@ type Role = 'worker' | 'supervisor' | 'admin';
 
 const ROLES: {
   key: Role;
-  label: string;
   color: string;
   tint: string;
   icon: React.ReactNode;
 }[] = [
   {
     key: 'worker',
-    label: 'Worker',
     color: '#E11900',
     tint: 'rgba(225,25,0,0.06)',
     icon: <MaterialCommunityIcons name="account-hard-hat" size={20} color="#E11900" />,
   },
   {
     key: 'supervisor',
-    label: 'Supervisor',
     color: '#2F6FE0',
     tint: 'rgba(47,111,224,0.06)',
     icon: <Ionicons name="person" size={19} color="#2F6FE0" />,
   },
   {
     key: 'admin',
-    label: 'Admin',
     color: '#7A4DF5',
     tint: 'rgba(122,77,245,0.06)',
     icon: <MaterialCommunityIcons name="shield-account" size={20} color="#7A4DF5" />,
   },
 ];
 
-const TRUST = [
+const TRUST_ITEMS = [
   {
+    key: 'secure',
     icon: <Ionicons name="shield-checkmark" size={22} color="#E11900" />,
     iconBg: 'rgba(225,25,0,0.1)',
-    title: 'Secure',
-    desc: 'Your data is encrypted and always protected',
   },
   {
+    key: 'reliable',
     icon: <Ionicons name="document-text" size={22} color="#2F6FE0" />,
     iconBg: 'rgba(47,111,224,0.1)',
-    title: 'Reliable',
-    desc: 'Grounded in real manuals and SOPs',
   },
   {
+    key: 'trusted',
     icon: <Ionicons name="people" size={22} color="#22A55E" />,
     iconBg: 'rgba(34,165,94,0.12)',
-    title: 'Trusted',
-    desc: 'Built for factories, by safety experts',
   },
 ];
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -101,25 +96,25 @@ export default function LoginScreen() {
               <Text style={styles.wordmarkDark}> Button</Text>
             </Text>
 
-            <Text style={styles.tagline}>AI Emergency Response Platform</Text>
+            <Text style={styles.tagline}>{t('login.tagline')}</Text>
 
             <View style={styles.pill}>
               <Ionicons name="shield-checkmark" size={15} color="#E11900" />
-              <Text style={styles.pillText}>Smart guidance. Human oversight. Real safety.</Text>
+              <Text style={styles.pillText}>{t('login.pillText')}</Text>
             </View>
           </View>
 
           {/* Login card */}
           <View style={styles.card}>
-            <Text style={styles.welcome}>Welcome Back!</Text>
-            <Text style={styles.welcomeSub}>Sign in to continue to your account</Text>
+            <Text style={styles.welcome}>{t('login.welcome')}</Text>
+            <Text style={styles.welcomeSub}>{t('login.welcomeSub')}</Text>
 
             {/* Email */}
             <View style={styles.inputRow}>
               <Ionicons name="mail-outline" size={20} color="#8A93A6" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Email address"
+                placeholder={t('login.emailPlaceholder')}
                 placeholderTextColor="#98A2B3"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -139,7 +134,7 @@ export default function LoginScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder={t('login.passwordPlaceholder')}
                 placeholderTextColor="#98A2B3"
                 secureTextEntry={!showPassword}
                 value={password}
@@ -149,7 +144,7 @@ export default function LoginScreen() {
                 onPress={() => setShowPassword((v) => !v)}
                 hitSlop={10}
                 accessibilityRole="button"
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
+                accessibilityLabel={showPassword ? t('login.hidePassword') : t('login.showPassword')}>
                 <Ionicons
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
@@ -159,7 +154,7 @@ export default function LoginScreen() {
             </View>
 
             {/* Login as */}
-            <Text style={styles.loginAs}>Login as</Text>
+            <Text style={styles.loginAs}>{t('login.loginAs')}</Text>
             <View style={styles.roleRow}>
               {ROLES.map((r) => {
                 const selected = role === r.key;
@@ -174,7 +169,9 @@ export default function LoginScreen() {
                     accessibilityRole="button"
                     accessibilityState={{ selected }}>
                     {r.icon}
-                    <Text style={[styles.roleLabel, { color: r.color }]}>{r.label}</Text>
+                    <Text style={[styles.roleLabel, { color: r.color }]}>
+                      {t(`login.roles.${r.key}`)}
+                    </Text>
                   </Pressable>
                 );
               })}
@@ -190,10 +187,10 @@ export default function LoginScreen() {
                 <View style={[styles.checkbox, remember && styles.checkboxChecked]}>
                   {remember && <Ionicons name="checkmark" size={13} color="#ffffff" />}
                 </View>
-                <Text style={styles.rememberText}>Remember me</Text>
+                <Text style={styles.rememberText}>{t('login.rememberMe')}</Text>
               </Pressable>
               <Pressable hitSlop={8}>
-                <Text style={styles.forgot}>Forgot password?</Text>
+                <Text style={styles.forgot}>{t('login.forgotPassword')}</Text>
               </Pressable>
             </View>
 
@@ -215,7 +212,7 @@ export default function LoginScreen() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.signIn}>
-                  <Text style={styles.signInText}>Sign In</Text>
+                  <Text style={styles.signInText}>{t('login.signIn')}</Text>
                   <Ionicons name="arrow-forward" size={20} color="#ffffff" />
                 </LinearGradient>
               </Pressable>
@@ -239,7 +236,7 @@ export default function LoginScreen() {
         styles.skipButtonText,
         role !== "worker" && styles.skipButtonTextDisabled,
       ]}>
-      Skip Login • Worker Dashboard
+      {t('login.skipWorker')}
     </Text>
   </Pressable>
 
@@ -262,7 +259,7 @@ export default function LoginScreen() {
           color: role === "supervisor" ? "#2F6FE0" : "#B7BDC9",
         },
       ]}>
-      Skip Login • Supervisor Dashboard
+      {t('login.skipSupervisor')}
     </Text>
   </Pressable>
 
@@ -285,28 +282,30 @@ export default function LoginScreen() {
           color: role === "admin" ? "#7A4DF5" : "#B7BDC9",
         },
       ]}>
-      Skip Login • Admin Dashboard
+      {t('login.skipAdmin')}
     </Text>
   </Pressable>
 </View>
 
           {/* Trust columns */}
           <View style={styles.trustRow}>
-            {TRUST.map((t) => (
-              <View key={t.title} style={styles.trustCol}>
-                <View style={[styles.trustIcon, { backgroundColor: t.iconBg }]}>{t.icon}</View>
-                <Text style={styles.trustTitle}>{t.title}</Text>
-                <Text style={styles.trustDesc}>{t.desc}</Text>
+            {TRUST_ITEMS.map((item) => (
+              <View key={item.key} style={styles.trustCol}>
+                <View style={[styles.trustIcon, { backgroundColor: item.iconBg }]}>
+                  {item.icon}
+                </View>
+                <Text style={styles.trustTitle}>{t(`login.trust.${item.key}.title`)}</Text>
+                <Text style={styles.trustDesc}>{t(`login.trust.${item.key}.desc`)}</Text>
               </View>
             ))}
           </View>
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerVersion}>Red Button v1.0.0</Text>
+            <Text style={styles.footerVersion}>{t('login.footerVersion')}</Text>
             <View style={styles.footerRow}>
               <Ionicons name="shield-checkmark-outline" size={14} color="#98A2B3" />
-              <Text style={styles.footerText}>Built for safety. Designed for people.</Text>
+              <Text style={styles.footerText}>{t('login.footerText')}</Text>
             </View>
           </View>
     </View>        
