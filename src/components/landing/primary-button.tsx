@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRef } from 'react';
+import { useMemo } from 'react';
 import { Animated, Pressable, StyleSheet, Text } from 'react-native';
 
 type Props = {
@@ -11,7 +11,7 @@ type Props = {
 };
 
 export function PrimaryButton({ label, icon, onPress, variant = 'primary' }: Props) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useMemo(() => new Animated.Value(1), []);
 
   const onPressIn = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true }).start();
   const onPressOut = () =>

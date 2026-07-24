@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Animated,
   Platform,
@@ -78,7 +78,7 @@ export default function LoginScreen() {
   const [role, setRole] = useState<Role>('worker');
   const [remember, setRemember] = useState(false);
 
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useMemo(() => new Animated.Value(1), []);
 
   return (
     <View style={styles.page}>
@@ -232,7 +232,7 @@ export default function LoginScreen() {
             <Pressable
               style={[styles.skipButton, role !== 'worker' && styles.skipButtonDisabled]}
               disabled={role !== 'worker'}
-              onPress={() => router.push('/worker-dashboard')}
+              onPress={() => router.replace('/worker-dashboard')}
               accessibilityRole="button"
               accessibilityLabel="Skip login and go to worker dashboard">
               <Ionicons

@@ -1,7 +1,7 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useRef } from 'react';
+import { useMemo } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -65,7 +65,7 @@ const FEATURES = [
 ];
 
 export default function HomeScreen() {
-  const menuScale = useRef(new Animated.Value(1)).current;
+  const menuScale = useMemo(() => new Animated.Value(1), []);
   const router = useRouter();
 
   return (
